@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import $ from 'jquery';
 import gsap from 'gsap';
-import { config } from '@/config';
+import { useConfig } from '@/config';
 
 export default function LoginPage() {
+  const config = useConfig();
   const pageRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({ email: '', password: '' });
 
