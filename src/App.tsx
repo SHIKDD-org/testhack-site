@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import $ from 'jquery';
 import gsap from 'gsap';
 import { HackathonProvider } from './contexts/HackathonContext';
+import { AuthProvider } from './contexts/AuthContext';
 import IntroScreen from './components/IntroScreen';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -95,12 +96,14 @@ export default function App() {
 
   return (
     <HackathonProvider>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Routes>
+      </AuthProvider>
     </HackathonProvider>
   );
 }

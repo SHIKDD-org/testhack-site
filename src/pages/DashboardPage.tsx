@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import $ from 'jquery';
 import { useConfig } from '@/config';
+import { useAuth } from '@/contexts/AuthContext';
 
 /* ─── Mock Data (replace with API later) ─── */
 const MOCK_TEAM = {
@@ -97,21 +98,30 @@ function timeUntil(iso: string) {
 /* ─── Component ─── */
 export default function DashboardPage() {
   const config = useConfig();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checklist, setChecklist] = useState(MOCK_CHECKLIST);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    if (!pageRef.current) return;
+    gsap.fromTo(pageRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+  }, [authLoading, user]);
+
   const accent = config.accentColor;
   const team = MOCK_TEAM;
   const completedTasks = checklist.filter(c => c.done).length;
   const progressPct = Math.round((completedTasks / checklist.length) * 100);
-
-  useEffect(() => {
-    if (!pageRef.current) return;
-    gsap.fromTo(pageRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' });
-  }, []);
 
   // Animate content sections on change
   useEffect(() => {
@@ -147,7 +157,7 @@ export default function DashboardPage() {
           { label: 'Members', value: `${team.members.length}`, sub: `/ ${config.maxTeamSize} max` },
           { label: 'Progress', value: `${progressPct}%`, sub: `${completedTasks}/${checklist.length} tasks` },
         ].map((s, i) => (
-          <div key={i} className="p-4 bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all group">
+          <div key={i} className="p-4 bg-white/2 border border-white/ hover:border-white/10 transition-all group">
             <p className="text-[10px] text-white/30 uppercase tracking-[3px] mb-1">{s.label}</p>
             <p className="text-2xl font-black" style={{ color: i === 0 ? accent : 'white' }}>{s.value}</p>
             <p className="text-xs text-white/20 mt-0.5">{s.sub}</p>
@@ -161,7 +171,7 @@ export default function DashboardPage() {
           <span className="text-xs text-white/30 uppercase tracking-[3px]">Hackathon Progress</span>
           <span className="text-xs font-bold" style={{ color: accent }}>{progressPct}%</span>
         </div>
-        <div className="w-full h-1.5 bg-white/[0.04] overflow-hidden">
+        <div className="w-full h-1.5 bg-white/4 overflow-hidden">
           <div className="h-full transition-all duration-700" style={{ width: `${progressPct}%`, background: accent }} />
         </div>
       </div>
@@ -179,7 +189,7 @@ export default function DashboardPage() {
             <button
               key={i}
               onClick={() => { setActiveSection(a.section); setSidebarOpen(false); }}
-              className="p-3 bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/10 transition-all text-left group"
+              className="p-3 bg-white/2 border border-white/ hover:bg-white/4 hover:border-white/10 transition-all text-left group"
             >
               <span className="text-lg block mb-1">{a.icon}</span>
               <span className="text-xs text-white/50 group-hover:text-white transition-colors uppercase tracking-wider">{a.label}</span>
@@ -198,7 +208,7 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-2">
           {MOCK_ANNOUNCEMENTS.slice(0, 2).map(a => (
-            <div key={a.id} className="p-3 bg-white/[0.02] border border-white/[0.06] flex items-start gap-3">
+            <div key={a.id} className="p-3 bg-white/2 border border-white/ flex items-start gap-3">
               <span className="text-sm mt-0.5">{a.type === 'warning' ? '⚠️' : a.type === 'event' ? '📅' : 'ℹ️'}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white/80 truncate">{a.title}</p>
@@ -217,10 +227,10 @@ export default function DashboardPage() {
             <button
               key={c.id}
               onClick={() => toggleChecklist(c.id)}
-              className={`w-full flex items-center gap-3 p-2.5 text-left transition-all hover:bg-white/[0.02] ${c.done ? 'opacity-50' : ''}`}
+              className={`w-full flex items-center gap-3 p-2.5 text-left transition-all hover:bg-white/2 ${c.done ? 'opacity-50' : ''}`}
             >
               <span
-                className="w-4 h-4 border flex items-center justify-center text-[10px] flex-shrink-0 transition-all"
+                className="w-4 h-4 border flex items-center justify-center text-[10px] shrink-0 transition-all"
                 style={{
                   borderColor: c.done ? accent : 'rgba(255,255,255,0.15)',
                   background: c.done ? accent : 'transparent',
@@ -245,7 +255,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Team info card */}
-      <div className="p-5 bg-white/[0.02] border border-white/[0.06]">
+      <div className="p-5 bg-white/2 border border-white/">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-black uppercase">{team.name}</h3>
@@ -268,7 +278,7 @@ export default function DashboardPage() {
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Members</h3>
         <div className="space-y-2">
           {team.members.map((m, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all">
+            <div key={i} className="flex items-center gap-4 p-4 bg-white/2 border border-white/ hover:border-white/10 transition-all">
               <div className="text-2xl relative">
                 {m.avatar}
                 <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0a] ${m.online ? 'bg-green-500' : 'bg-white/20'}`} />
@@ -278,7 +288,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-white/30">{m.email}</p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider px-2 py-1 bg-white/[0.04] border border-white/[0.06]">{m.role}</span>
+                <span className="text-[10px] text-white/40 uppercase tracking-wider px-2 py-1 bg-white/4 border border-white/">{m.role}</span>
               </div>
             </div>
           ))}
@@ -299,14 +309,14 @@ export default function DashboardPage() {
       <div>
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Team Settings</h3>
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center justify-between p-3 bg-white/2 border border-white/">
             <div>
               <p className="text-sm text-white/70">Team Name</p>
               <p className="text-xs text-white/30">Change your team's display name</p>
             </div>
             <button className="text-xs uppercase tracking-wider px-3 py-1.5 border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all">Edit</button>
           </div>
-          <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center justify-between p-3 bg-white/2 border border-white/">
             <div>
               <p className="text-sm text-white/70">Leave Team</p>
               <p className="text-xs text-white/30">Leave this team and join another</p>
@@ -326,7 +336,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Project overview */}
-      <div className="p-5 bg-white/[0.02] border border-white/[0.06]">
+      <div className="p-5 bg-white/2 border border-white/">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-xl font-black uppercase">{team.project.name || 'Untitled Project'}</h3>
@@ -344,7 +354,7 @@ export default function DashboardPage() {
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Tech Stack</h3>
         <div className="flex flex-wrap gap-2">
           {team.project.techStack.map((t, i) => (
-            <span key={i} className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider bg-white/[0.03] border border-white/[0.06] text-white/60">
+            <span key={i} className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider bg-white/3 border border-white/ text-white/60">
               {t}
             </span>
           ))}
@@ -358,7 +368,7 @@ export default function DashboardPage() {
       <div>
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Project Links</h3>
         <div className="space-y-2">
-          <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center gap-3 p-3 bg-white/2 border border-white/">
             <span className="text-sm">📦</span>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-white/30 uppercase tracking-wider mb-0.5">Repository</p>
@@ -370,7 +380,7 @@ export default function DashboardPage() {
             </div>
             <button className="text-xs uppercase tracking-wider px-3 py-1.5 border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all">Edit</button>
           </div>
-          <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center gap-3 p-3 bg-white/2 border border-white/">
             <span className="text-sm">🌐</span>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-white/30 uppercase tracking-wider mb-0.5">Demo URL</p>
@@ -390,7 +400,7 @@ export default function DashboardPage() {
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Project Description</h3>
         <textarea
           defaultValue={team.project.description}
-          className="w-full h-32 p-4 bg-white/[0.02] border border-white/[0.06] text-sm text-white/70 placeholder-white/15 focus:outline-none focus:border-white/15 transition-all resize-none"
+          className="w-full h-32 p-4 bg-white/2 border border-white/ text-sm text-white/70 placeholder-white/15 focus:outline-none focus:border-white/15 transition-all resize-none"
           placeholder="Describe your project, its purpose, and what problem it solves..."
         />
         <div className="flex justify-end mt-2">
@@ -410,7 +420,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Countdown */}
-      <div className="p-5 bg-white/[0.02] border border-white/[0.06] text-center">
+      <div className="p-5 bg-white/2 border border-white/ text-center">
         <p className="text-[10px] text-white/30 uppercase tracking-[3px] mb-2">Next Milestone</p>
         <p className="text-sm text-white/50 mb-1">Hacking Starts</p>
         <p className="text-4xl font-black" style={{ color: accent }}>{timeUntil(config.hackingStart)}</p>
@@ -421,20 +431,20 @@ export default function DashboardPage() {
       <div>
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-4">Timeline</h3>
         <div className="relative pl-6">
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/[0.06]" />
+          <div className="absolute left-1.75 top-2 bottom-2 w-px bg-white/6" />
           {MOCK_SCHEDULE(config).map((ev, i) => (
             <div key={i} className="relative pb-6 last:pb-0">
               <div
-                className="absolute left-[-19px] top-1.5 w-3.5 h-3.5 border-2 border-[#0a0a0a]"
+                className="absolute -left-4.75 top-1.5 w-3.5 h-3.5 border-2 border-[#0a0a0a]"
                 style={{
                   background: ev.status === 'completed' ? accent : 'rgba(255,255,255,0.1)',
                   borderColor: ev.status === 'completed' ? accent : 'rgba(255,255,255,0.1)',
                 }}
               />
-              <div className={`p-4 bg-white/[0.02] border border-white/[0.06] transition-all ${ev.status === 'completed' ? 'opacity-60' : 'hover:border-white/10'}`}>
+              <div className={`p-4 bg-white/2 border border-white/ transition-all ${ev.status === 'completed' ? 'opacity-60' : 'hover:border-white/10'}`}>
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="text-sm font-bold text-white/80">{ev.label}</h4>
-                  <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 ${ev.status === 'completed' ? 'text-green-400 bg-green-500/10' : 'text-white/30 bg-white/[0.04]'}`}>
+                  <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 ${ev.status === 'completed' ? 'text-green-400 bg-green-500/10' : 'text-white/30 bg-white/4'}`}>
                     {ev.status === 'completed' ? 'Done' : timeUntil(ev.date)}
                   </span>
                 </div>
@@ -455,7 +465,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Submission status */}
-      <div className={`p-5 border ${team.project.submitted ? 'bg-green-500/[0.03] border-green-500/20' : 'bg-yellow-500/[0.03] border-yellow-500/20'}`}>
+      <div className={`p-5 border ${team.project.submitted ? 'bg-green-500/3 border-green-500/20' : 'bg-yellow-500/3 border-yellow-500/20'}`}>
         <div className="flex items-center gap-3 mb-2">
           <span className="text-xl">{team.project.submitted ? '✅' : '⏳'}</span>
           <div>
@@ -542,7 +552,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-3 md:grid-cols-2">
         {MOCK_RESOURCES.map((r, i) => (
-          <div key={i} className="group p-5 bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all cursor-pointer">
+          <div key={i} className="group p-5 bg-white/2 border border-white/ hover:border-white/10 transition-all cursor-pointer">
             <div className="flex items-start gap-3">
               <span className="text-2xl">{r.icon}</span>
               <div>
@@ -564,7 +574,7 @@ export default function DashboardPage() {
             { q: 'Can I use pre-existing code?', a: 'You may use open-source libraries and frameworks, but the core project must be built during the hackathon.' },
             { q: 'Is there a minimum team size?', a: 'You can participate solo or in a team of up to ' + config.maxTeamSize + ' members.' },
           ].map((faq, i) => (
-            <details key={i} className="group p-3 bg-white/[0.02] border border-white/[0.06]">
+            <details key={i} className="group p-3 bg-white/2 border border-white/">
               <summary className="text-sm font-medium text-white/70 cursor-pointer list-none flex items-center justify-between">
                 {faq.q}
                 <span className="text-white/20 group-open:rotate-45 transition-transform text-lg">+</span>
@@ -586,7 +596,7 @@ export default function DashboardPage() {
 
       <div className="space-y-3">
         {MOCK_ANNOUNCEMENTS.map(a => (
-          <div key={a.id} className="p-5 bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all">
+          <div key={a.id} className="p-5 bg-white/2 border border-white/ hover:border-white/10 transition-all">
             <div className="flex items-start gap-3">
               <span className="text-xl mt-0.5">
                 {a.type === 'warning' ? '⚠️' : a.type === 'event' ? '📅' : 'ℹ️'}
@@ -608,11 +618,11 @@ export default function DashboardPage() {
         <h3 className="text-xs text-white/30 uppercase tracking-[3px] mb-3">Notification Preferences</h3>
         <div className="space-y-2">
           {['Email notifications', 'Browser push notifications', 'Discord DM notifications'].map((pref, i) => (
-            <label key={i} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06] cursor-pointer hover:bg-white/[0.03] transition-all">
+            <label key={i} className="flex items-center justify-between p-3 bg-white/2 border border-white/ cursor-pointer hover:bg-white/3 transition-all">
               <span className="text-sm text-white/60">{pref}</span>
               <div className="relative">
                 <input type="checkbox" defaultChecked={i === 0} className="sr-only peer" />
-                <div className="w-9 h-5 bg-white/10 peer-checked:bg-[var(--accent)] rounded-full transition-all" style={{ '--accent': accent } as React.CSSProperties} />
+                <div className="w-9 h-5 bg-white/10 peer-checked:bg-(--accent) rounded-full transition-all" style={{ '--accent': accent } as React.CSSProperties} />
                 <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4" />
               </div>
             </label>
@@ -637,7 +647,7 @@ export default function DashboardPage() {
           { icon: '🐛', title: 'Report a Bug', desc: 'Found an issue with the platform? Let us know.', cta: 'Report' },
           { icon: '📧', title: 'Email Support', desc: 'Reach out to the organizing team directly.', cta: 'Send Email' },
         ].map((s, i) => (
-          <div key={i} className="p-5 bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all">
+          <div key={i} className="p-5 bg-white/2 border border-white/ hover:border-white/10 transition-all">
             <span className="text-2xl block mb-3">{s.icon}</span>
             <h4 className="text-sm font-bold text-white/80 mb-1">{s.title}</h4>
             <p className="text-xs text-white/30 mb-4 leading-relaxed">{s.desc}</p>
@@ -689,9 +699,9 @@ export default function DashboardPage() {
   return (
     <div ref={pageRef} className="min-h-screen bg-[#0a0a0a] text-white flex">
       {/* ─── Sidebar (desktop) ─── */}
-      <aside className="hidden lg:flex flex-col w-[260px] min-h-screen border-r border-white/[0.06] bg-[#0a0a0a] fixed left-0 top-0 bottom-0 z-50">
+      <aside className="hidden lg:flex flex-col w-65 min-h-screen border-r border-white/ bg-[#0a0a0a] fixed left-0 top-0 bottom-0 z-50">
         {/* Logo */}
-        <div className="p-5 border-b border-white/[0.06]">
+        <div className="p-5 border-b border-white/">
           <Link to="/" className="flex items-center gap-3 group">
             <div
               className="w-9 h-9 flex items-center justify-center text-base font-black"
@@ -715,7 +725,7 @@ export default function DashboardPage() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-all ${
                 activeSection === item.id
                   ? 'text-white font-bold'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.02]'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/2'
               }`}
               style={activeSection === item.id ? { background: `${accent}10`, borderLeft: `2px solid ${accent}` } : { borderLeft: '2px solid transparent' }}
             >
@@ -731,9 +741,9 @@ export default function DashboardPage() {
         </nav>
 
         {/* Sidebar footer */}
-        <div className="p-4 border-t border-white/[0.06]">
+        <div className="p-4 border-t border-white/">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-white/[0.06] flex items-center justify-center text-sm">🧑‍💻</div>
+            <div className="w-8 h-8 bg-white/6 flex items-center justify-center text-sm">🧑‍💻</div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white/70 truncate">{team.members[0].name}</p>
               <p className="text-[10px] text-white/30 truncate">{team.members[0].email}</p>
@@ -752,7 +762,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* ─── Mobile header ─── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-lg border-b border-white/[0.06]">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-lg border-b border-white/">
         <div className="flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-7 h-7 flex items-center justify-center text-xs font-black" style={{ background: accent, color: '#000' }}>
@@ -770,7 +780,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mobile menu */}
-        <div className={`overflow-hidden transition-all duration-300 ${sidebarOpen ? 'max-h-[500px] border-b border-white/[0.06]' : 'max-h-0'}`}>
+        <div className={`overflow-hidden transition-all duration-300 ${sidebarOpen ? 'max-h-125 border-b border-white/' : 'max-h-0'}`}>
           <nav className="p-3 space-y-0.5">
             {SIDEBAR_ITEMS.map(item => (
               <button
@@ -790,9 +800,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Main content ─── */}
-      <main className="flex-1 lg:ml-[260px] pt-14 lg:pt-0">
+      <main className="flex-1 lg:ml-65 pt-14 lg:pt-0">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-lg border-b border-white/[0.06] hidden lg:block">
+        <div className="sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-lg border-b border-white/ hidden lg:block">
           <div className="flex items-center justify-between px-8 h-14">
             <div className="flex items-center gap-2 text-xs text-white/30 uppercase tracking-wider">
               <Link to="/" className="hover:text-white/60 transition-colors">Home</Link>
@@ -805,7 +815,7 @@ export default function DashboardPage() {
               </span>
               <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-white/[0.06] flex items-center justify-center text-xs">🧑‍💻</div>
+                <div className="w-7 h-7 bg-white/6 flex items-center justify-center text-xs">🧑‍💻</div>
                 <span className="text-xs text-white/50">{team.members[0].name}</span>
               </div>
             </div>
